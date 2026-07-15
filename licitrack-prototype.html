@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Licitrack — Prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0F1B2D;
+    --bg:#F3F6F8;
+    --surface:#FFFFFF;
+    --accent:#F2B705;
+    --accent-ink:#4A3900;
+    --teal:#127A6E;
+    --rose:#C1443C;
+    --muted:#5C6B7A;
+    --line:#E1E6EA;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:0 0 60px;
+  }
+  .app{width:100%;max-width:520px;}
+
+  .topbar{
+    background:var(--ink);
+    color:#fff;
+    padding:16px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .topbar .logo{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:18px;
+    letter-spacing:-0.01em;
+  }
+  .topbar .logo .dot{color:var(--accent);}
+  .topbar .who{font-size:11.5px;color:#AEB9C4;text-align:right;}
+  .topbar .who b{color:#fff;display:block;font-size:12.5px;}
+  .topbar .right{display:flex;align-items:center;gap:12px;}
+  .home-btn{
+    display:flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.16);
+    color:#fff;font-family:inherit;font-size:12px;font-weight:600;
+    padding:7px 11px;border-radius:8px;cursor:pointer;
+    flex-shrink:0;
+  }
+  .home-btn:hover{background:rgba(255,255,255,.16);}
+  .home-btn .ic{color:var(--accent);font-size:13px;}
+  .logout-btn{
+    display:none;
+    align-items:center;gap:6px;
+    background:transparent;
+    border:1px solid rgba(193,68,60,.55);
+    color:#F3B9B4;font-family:inherit;font-size:12px;font-weight:600;
+    padding:7px 11px;border-radius:8px;cursor:pointer;
+    flex-shrink:0;
+  }
+  .logout-btn.visible{display:flex;}
+  .logout-btn:hover{background:rgba(193,68,60,.18);}
+
+  .stub-track{display:flex;gap:5px;padding:14px 20px 0;}
+  .stub{
+    flex:1;text-align:center;padding:7px 3px;border-radius:7px;
+    background:var(--surface);border:1px solid var(--line);
+    font-size:10px;font-weight:600;color:var(--muted);
+  }
+  .stub.done{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .stub.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+
+  .content{padding:18px 20px 10px;}
+  .screen{display:none;animation:fadeUp .3s ease;}
+  .screen.active{display:block;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .card{
+    background:var(--surface);
+    border-radius:var(--radius);
+    border:1px solid var(--line);
+    padding:20px;
+  }
+  h2.title{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;margin:0 0 4px;}
+  p.sub{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.4;}
+
+  label.field{display:block;margin-bottom:14px;}
+  label.field .lb{display:block;font-size:12px;font-weight:600;margin-bottom:6px;}
+  label.field input{
+    width:100%;padding:11px 12px;border-radius:8px;border:1.5px solid var(--line);
+    font-family:inherit;font-size:14px;background:#fff;color:var(--ink);
+  }
+  label.field input:focus{outline:none;border-color:var(--ink);}
+  label.field input.invalid{border-color:var(--rose);}
+  label.field input.valid{border-color:var(--teal);}
+  .hint{font-size:11.5px;margin-top:5px;min-height:14px;}
+  .hint.err{color:var(--rose);}
+  .hint.ok{color:var(--teal);}
+
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+  .chip{
+    padding:9px 12px;border-radius:8px;border:1.5px solid var(--line);
+    background:#fff;font-family:inherit;font-size:12px;font-weight:600;
+    cursor:pointer;color:var(--muted);
+  }
+  .chip.selected{border-color:var(--ink);background:var(--ink);color:#fff;}
+  .chip.cat-filter.selected{border-color:var(--accent);background:var(--accent);color:var(--accent-ink);}
+
+  .btn{
+    width:100%;padding:13px 16px;border-radius:9px;border:none;
+    font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;
+  }
+  .btn-primary{background:var(--accent);color:var(--accent-ink);}
+  .btn-primary:disabled{background:#DFE3E6;color:#9AA4AC;cursor:not-allowed;}
+  .btn-ghost{background:transparent;color:var(--muted);font-weight:600;font-size:13px;padding:8px 4px;width:auto;}
+  .btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;}
+  .btn-row .btn-primary{flex:1;}
+
+  /* Dashboard */
+  .search-input{
+    width:100%;padding:11px 12px;border-radius:9px;border:1.5px solid var(--line);
+    font-family:inherit;font-size:13.5px;margin-bottom:12px;
+  }
+  .search-input:focus{outline:none;border-color:var(--ink);}
+  .tender-list{display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+  .tender-card{
+    position:relative;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 14px 14px 16px;
+    cursor:pointer;
+    overflow:hidden;
+  }
+  .tender-card::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--teal);
+  }
+  .tender-card.urgent::before{background:var(--rose);}
+  .tender-card.soon::before{background:var(--accent);}
+  .tender-card:hover{border-color:var(--ink);}
+  .t-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .t-entidad{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+  .t-titulo{font-family:'Space Grotesk',sans-serif;font-size:14.5px;font-weight:600;margin:3px 0 8px;line-height:1.3;}
+  .t-badge{
+    flex-shrink:0;font-size:10.5px;font-weight:700;padding:4px 8px;border-radius:20px;
+    background:var(--teal);color:#fff;white-space:nowrap;
+  }
+  .t-badge.urgent{background:var(--rose);}
+  .t-badge.soon{background:var(--accent);color:var(--accent-ink);}
+  .t-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);}
+  .t-meta b{color:var(--ink);font-weight:700;}
+  .t-tag{
+    display:inline-block;margin-top:8px;font-size:10.5px;font-weight:600;
+    background:#fff;border:1px solid var(--line);padding:3px 8px;border-radius:6px;color:var(--muted);
+  }
+  .no-results{text-align:center;color:var(--muted);font-size:13px;padding:24px 10px;}
+
+  /* Detail */
+  .detail-meta-row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin:4px 0;padding:8px 0;border-bottom:1px solid var(--line);}
+  .detail-meta-row b{color:var(--ink);}
+  .req-list{margin:12px 0 4px;padding:0;list-style:none;}
+  .req-list li{
+    font-size:13px;padding:8px 0 8px 24px;position:relative;border-bottom:1px solid var(--line);
+  }
+  .req-list li::before{content:"✓";position:absolute;left:0;color:var(--teal);font-weight:700;}
+  .req-list li:last-child{border-bottom:none;}
+
+  /* Apply form */
+  .checkbox-row{display:flex;align-items:flex-start;gap:10px;margin:14px 0;padding:12px;background:var(--bg);border-radius:9px;}
+  .checkbox-row input{margin-top:2px;width:16px;height:16px;flex-shrink:0;}
+  .checkbox-row label{font-size:12.5px;line-height:1.4;color:var(--ink);}
+  .file-btn{
+    width:100%;padding:11px 12px;border-radius:8px;border:1.5px dashed var(--line);
+    background:#fff;font-family:inherit;font-size:13px;color:var(--muted);cursor:pointer;text-align:center;
+  }
+  .file-btn.attached{border-style:solid;border-color:var(--teal);color:var(--teal);font-weight:600;}
+
+  /* Confirmation */
+  .confirm-icon{
+    width:52px;height:52px;border-radius:50%;background:var(--teal);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px;
+  }
+  .radicado{text-align:center;font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px;}
+  .radicado-sub{text-align:center;font-size:12.5px;color:var(--muted);margin-bottom:20px;}
+  .track{display:flex;justify-content:space-between;position:relative;margin:20px 4px 8px;}
+  .track::before{content:"";position:absolute;top:9px;left:8%;right:8%;height:2px;background:var(--line);z-index:0;}
+  .track-step{position:relative;z-index:1;flex:1;text-align:center;}
+  .track-dot{width:18px;height:18px;border-radius:50%;background:var(--line);margin:0 auto 6px;border:2px solid var(--surface);}
+  .track-step.on .track-dot{background:var(--teal);}
+  .track-step span{font-size:10.5px;color:var(--muted);font-weight:600;}
+  .track-step.on span{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="logo">Licitrack<span class="dot">.</span></div>
+    <div class="right">
+      <div class="who" id="topWho">portal de licitaciones</div>
+      <button type="button" class="home-btn" id="btnHomeGlobal"><span class="ic">⌂</span>Inicio</button>
+      <button type="button" class="logout-btn" id="btnLogout"><span>⏻</span>Salir</button>
+    </div>
+  </div>
+
+  <div class="stub-track" id="stubTrack"></div>
+
+  <div class="content">
+
+    <!-- 1: AFILIACIÓN -->
+    <section class="screen active" id="screen-signup">
+      <div class="card">
+        <h2 class="title">Afilia tu empresa</h2>
+        <p class="sub">Regístrate una vez y accede a todas las licitaciones abiertas de dotación con entidades del Estado.</p>
+
+        <label class="field">
+          <span class="lb">Nombre de la empresa</span>
+          <input type="text" id="inpEmpresa" placeholder="Ej: Textiles Andina SAS">
+          <div class="hint" id="hintEmpresa"></div>
+        </label>
+
+        <label class="field">
+          <span class="lb">NIT</span>
+          <input type="text" id="inpNit" placeholder="Ej: 900123456-7">
+          <div class="hint" id="hintNit"></div>
+        </label>
+
+        <label class="field">
+          <span class="lb">Correo electrónico</span>
+          <input type="email" id="inpCorreo" placeholder="contacto@empresa.com">
+          <div class="hint" id="hintCorreo"></div>
+        </label>
+
+        <span class="lb">Sector de tu empresa</span>
+        <div class="chip-row" id="sectorChips">
+          <button type="button" class="chip" data-sector="Confección / Textil">Confección / Textil</button>
+          <button type="button" class="chip" data-sector="Calzado">Calzado</button>
+          <button type="button" class="chip" data-sector="EPP / Bioseguridad">EPP / Bioseguridad</button>
+          <button type="button" class="chip" data-sector="Dotación escolar">Dotación escolar</button>
+        </div>
+
+        <div class="btn-row" style="justify-content:flex-end;">
+          <button class="btn btn-primary" id="btnSignup" disabled>Crear cuenta y ver licitaciones</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2: DASHBOARD -->
+    <section class="screen" id="screen-dashboard">
+      <div class="card">
+        <h2 class="title" id="dashTitle">Licitaciones abiertas</h2>
+        <p class="sub">Filtra por categoría o busca por entidad y aplica a la que más te convenga.</p>
+
+        <input type="text" class="search-input" id="searchInput" placeholder="Buscar por entidad o título...">
+
+        <div class="chip-row" id="catChips"></div>
+        <div class="tender-list" id="tenderList"></div>
+      </div>
+    </section>
+
+    <!-- 3: DETALLE -->
+    <section class="screen" id="screen-detail">
+      <div class="card">
+        <h2 class="title" id="detTitulo"></h2>
+        <p class="sub" id="detEntidad"></p>
+
+        <div class="detail-meta-row"><span>Presupuesto estimado</span><b id="detValor"></b></div>
+        <div class="detail-meta-row"><span>Cierre de recepción</span><b id="detCierre"></b></div>
+        <div class="detail-meta-row"><span>Ciudad / cobertura</span><b id="detCiudad"></b></div>
+        <div class="detail-meta-row"><span>Categoría</span><b id="detCat"></b></div>
+
+        <span class="lb" style="display:block;margin-top:14px;">Requisitos para aplicar</span>
+        <ul class="req-list" id="detReq"></ul>
+
+        <div class="btn-row">
+          <button class="btn-ghost" id="btnBackDash">← Volver</button>
+          <button class="btn btn-primary" id="btnGoApply">Aplicar a esta licitación</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4: APLICAR -->
+    <section class="screen" id="screen-apply">
+      <div class="card">
+        <h2 class="title">Formulario de aplicación</h2>
+        <p class="sub" id="applySub"></p>
+
+        <label class="field">
+          <span class="lb">Valor de tu propuesta (COP)</span>
+          <input type="number" id="inpValor" placeholder="Ej: 180000000" min="0">
+          <div class="hint" id="hintValor"></div>
+        </label>
+
+        <label class="field">
+          <span class="lb">Tiempo de entrega (días)</span>
+          <input type="number" id="inpTiempo" placeholder="Ej: 30" min="1">
+          <div class="hint" id="hintTiempo"></div>
+        </label>
+
+        <label class="field">
+          <span class="lb">Persona de contacto</span>
+          <input type="text" id="inpContacto" placeholder="Nombre completo">
+          <div class="hint" id="hintContacto"></div>
+        </label>
+
+        <label class="field">
+          <span class="lb">Correo de contacto</span>
+          <input type="email" id="inpCorreoContacto" placeholder="contacto@empresa.com">
+          <div class="hint" id="hintCorreoContacto"></div>
+        </label>
+
+        <button type="button" class="file-btn" id="btnFile">📎 Adjuntar propuesta técnica (PDF)</button>
+
+        <div class="checkbox-row">
+          <input type="checkbox" id="chkRequisitos">
+          <label for="chkRequisitos">Confirmo que mi empresa cumple con todos los requisitos listados para esta licitación.</label>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-ghost" id="btnBackDetail">← Volver</button>
+          <button class="btn btn-primary" id="btnEnviar" disabled>Enviar aplicación</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5: CONFIRMACIÓN -->
+    <section class="screen" id="screen-confirm">
+      <div class="card">
+        <div class="confirm-icon">✓</div>
+        <div class="radicado" id="confRadicado"></div>
+        <div class="radicado-sub">Tu aplicación fue radicada correctamente</div>
+
+        <div class="track">
+          <div class="track-step on"><div class="track-dot"></div><span>Recibida</span></div>
+          <div class="track-step"><div class="track-dot"></div><span>En revisión</span></div>
+          <div class="track-step"><div class="track-dot"></div><span>Respuesta</span></div>
+        </div>
+
+        <p class="sub" style="text-align:center;margin-top:18px;">La entidad revisará tu propuesta antes del cierre y te notificaremos por correo cualquier novedad.</p>
+
+        <div class="btn-row">
+          <button class="btn-ghost" id="btnBackDash2">← Ver otras licitaciones</button>
+          <button class="btn btn-primary" id="btnHome">Ir al inicio</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const TENDERS = [
+    {id:1, entidad:'Alcaldía de Bogotá', titulo:'Dotación de uniformes para personal operativo', cat:'Uniformes', valor:185000000, dias:4, ciudad:'Bogotá D.C.',
+      requisitos:['Cámara de comercio vigente','RUT actualizado','Certificado de calidad textil','Experiencia mínima de 2 años en contratos similares']},
+    {id:2, entidad:'Ministerio de Salud', titulo:'Elementos de protección personal (EPP) para personal asistencial', cat:'EPP', valor:340000000, dias:9, ciudad:'Nacional',
+      requisitos:['Cámara de comercio vigente','RUT actualizado','Registro INVIMA (si aplica)','Póliza de cumplimiento']},
+    {id:3, entidad:'Gobernación del Valle', titulo:'Dotación escolar zona rural 2026', cat:'Dotación escolar', valor:210000000, dias:2, ciudad:'Valle del Cauca',
+      requisitos:['Cámara de comercio vigente','Certificado de origen del textil','Capacidad de entrega en zona rural']},
+    {id:4, entidad:'ESE Hospital Universitario', titulo:'Calzado de seguridad para personal de planta', cat:'Calzado', valor:95000000, dias:15, ciudad:'Cali',
+      requisitos:['Certificado técnico de calzado industrial','RUT actualizado','Garantía mínima de 6 meses']},
+    {id:5, entidad:'Empresa de Acueducto', titulo:'Uniformes e implementos de bioseguridad', cat:'Uniformes', valor:150000000, dias:6, ciudad:'Cali',
+      requisitos:['Cámara de comercio vigente','RUT actualizado','Certificado de bioseguridad']},
+  ];
+
+  const CATEGORIES = ['Todas','Uniformes','EPP','Calzado','Dotación escolar'];
+  const STEPS = ['Afiliación','Buscar','Detalle','Aplicar','Listo'];
+  const SCREENS = ['screen-signup','screen-dashboard','screen-detail','screen-apply','screen-confirm'];
+
+  let state = {
+    company: null,
+    sector: null,
+    activeCat: 'Todas',
+    searchTerm: '',
+    currentTender: null,
+    fileAttached: false,
+    screenIndex: 0
+  };
+
+  function money(n){
+    return n.toLocaleString('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0});
+  }
+
+  function urgency(dias){
+    if (dias <= 3) return 'urgent';
+    if (dias <= 7) return 'soon';
+    return 'normal';
+  }
+
+  function goTo(idx){
+    state.screenIndex = idx;
+    SCREENS.forEach((id, i) => document.getElementById(id).classList.toggle('active', i === idx));
+    renderStub();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function renderStub(){
+    document.getElementById('stubTrack').innerHTML = STEPS.map((label, i) => {
+      let cls = 'stub';
+      if (i < state.screenIndex) cls += ' done';
+      else if (i === state.screenIndex) cls += ' active';
+      return `<div class="${cls}">${label}</div>`;
+    }).join('');
+  }
+
+  function validateEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
+  function validateNit(v){ return /^\d{9,10}(-\d)?$/.test(v.trim()); }
+
+  // ---------- SCREEN 1: SIGNUP ----------
+  function updateSignupState(){
+    const empresa = document.getElementById('inpEmpresa').value.trim();
+    const nit = document.getElementById('inpNit').value;
+    const correo = document.getElementById('inpCorreo').value;
+    const ok = empresa.length > 1 && validateNit(nit) && validateEmail(correo) && !!state.sector;
+    document.getElementById('btnSignup').disabled = !ok;
+  }
+
+  document.getElementById('inpEmpresa').addEventListener('input', function(){
+    const ok = this.value.trim().length > 1;
+    this.classList.toggle('valid', ok && this.value.length>0);
+    this.classList.toggle('invalid', !ok && this.value.length>0);
+    updateSignupState();
+  });
+
+  document.getElementById('inpNit').addEventListener('input', function(){
+    const hint = document.getElementById('hintNit');
+    if (this.value.length === 0){
+      hint.textContent=''; hint.className='hint'; this.classList.remove('valid','invalid');
+    } else if (validateNit(this.value)){
+      hint.textContent='NIT válido'; hint.className='hint ok';
+      this.classList.add('valid'); this.classList.remove('invalid');
+    } else {
+      hint.textContent='Formato esperado: 900123456-7'; hint.className='hint err';
+      this.classList.add('invalid'); this.classList.remove('valid');
+    }
+    updateSignupState();
+  });
+
+  document.getElementById('inpCorreo').addEventListener('input', function(){
+    const hint = document.getElementById('hintCorreo');
+    if (this.value.length === 0){
+      hint.textContent=''; hint.className='hint'; this.classList.remove('valid','invalid');
+    } else if (validateEmail(this.value)){
+      hint.textContent='Correo válido'; hint.className='hint ok';
+      this.classList.add('valid'); this.classList.remove('invalid');
+    } else {
+      hint.textContent='Escribe un correo válido, ej: nombre@dominio.com'; hint.className='hint err';
+      this.classList.add('invalid'); this.classList.remove('valid');
+    }
+    updateSignupState();
+  });
+
+  document.querySelectorAll('#sectorChips .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.sector = chip.dataset.sector;
+      document.querySelectorAll('#sectorChips .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      updateSignupState();
+    });
+  });
+
+  document.getElementById('btnSignup').addEventListener('click', () => {
+    state.company = {
+      name: document.getElementById('inpEmpresa').value.trim(),
+      nit: document.getElementById('inpNit').value.trim(),
+      email: document.getElementById('inpCorreo').value.trim(),
+      sector: state.sector
+    };
+    document.getElementById('topWho').innerHTML = `<b>${state.company.name}</b>afiliada`;
+    document.getElementById('dashTitle').textContent = `Hola, ${state.company.name.split(' ')[0]}`;
+    document.getElementById('btnLogout').classList.add('visible');
+    renderCatChips();
+    renderTenders();
+    goTo(1);
+  });
+
+  // ---------- SCREEN 2: DASHBOARD ----------
+  function renderCatChips(){
+    const box = document.getElementById('catChips');
+    box.innerHTML = CATEGORIES.map(c => `<button type="button" class="chip cat-filter${c===state.activeCat?' selected':''}" data-cat="${c}">${c}</button>`).join('');
+    box.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        state.activeCat = chip.dataset.cat;
+        box.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        renderTenders();
+      });
+    });
+  }
+
+  document.getElementById('searchInput').addEventListener('input', function(){
+    state.searchTerm = this.value.trim().toLowerCase();
+    renderTenders();
+  });
+
+  function renderTenders(){
+    const list = document.getElementById('tenderList');
+    const filtered = TENDERS.filter(t => {
+      const matchesCat = state.activeCat === 'Todas' || t.cat === state.activeCat;
+      const matchesSearch = state.searchTerm === '' ||
+        t.entidad.toLowerCase().includes(state.searchTerm) ||
+        t.titulo.toLowerCase().includes(state.searchTerm);
+      return matchesCat && matchesSearch;
+    });
+
+    if (filtered.length === 0){
+      list.innerHTML = `<div class="no-results">No hay licitaciones que coincidan con tu búsqueda.</div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(t => {
+      const u = urgency(t.dias);
+      return `
+        <div class="tender-card ${u}" data-id="${t.id}">
+          <div class="t-top">
+            <div>
+              <div class="t-entidad">${t.entidad}</div>
+              <div class="t-titulo">${t.titulo}</div>
+            </div>
+            <div class="t-badge ${u}">${t.dias} día${t.dias===1?'':'s'}</div>
+          </div>
+          <div class="t-meta"><span>Presupuesto</span><b>${money(t.valor)}</b></div>
+          <span class="t-tag">${t.cat} · ${t.ciudad}</span>
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.tender-card').forEach(card => {
+      card.addEventListener('click', () => openDetail(Number(card.dataset.id)));
+    });
+  }
+
+  // ---------- SCREEN 3: DETAIL ----------
+  function openDetail(id){
+    const t = TENDERS.find(x => x.id === id);
+    state.currentTender = t;
+    document.getElementById('detTitulo').textContent = t.titulo;
+    document.getElementById('detEntidad').textContent = t.entidad;
+    document.getElementById('detValor').textContent = money(t.valor);
+    document.getElementById('detCierre').textContent = `En ${t.dias} día${t.dias===1?'':'s'}`;
+    document.getElementById('detCiudad').textContent = t.ciudad;
+    document.getElementById('detCat').textContent = t.cat;
+    document.getElementById('detReq').innerHTML = t.requisitos.map(r => `<li>${r}</li>`).join('');
+    goTo(2);
+  }
+
+  document.getElementById('btnBackDash').addEventListener('click', () => goTo(1));
+  document.getElementById('btnGoApply').addEventListener('click', () => {
+    document.getElementById('applySub').textContent = `Estás aplicando a: ${state.currentTender.titulo}`;
+    goTo(3);
+  });
+
+  // ---------- SCREEN 4: APPLY ----------
+  function updateApplyState(){
+    const valor = document.getElementById('inpValor').value;
+    const tiempo = document.getElementById('inpTiempo').value;
+    const contacto = document.getElementById('inpContacto').value.trim();
+    const correo = document.getElementById('inpCorreoContacto').value;
+    const chk = document.getElementById('chkRequisitos').checked;
+
+    const ok = Number(valor) > 0 && Number(tiempo) > 0 && contacto.length > 1 && validateEmail(correo) && chk;
+    document.getElementById('btnEnviar').disabled = !ok;
+  }
+
+  document.getElementById('inpValor').addEventListener('input', function(){
+    const hint = document.getElementById('hintValor');
+    const ok = Number(this.value) > 0;
+    this.classList.toggle('valid', ok);
+    this.classList.toggle('invalid', this.value.length>0 && !ok);
+    hint.textContent = this.value.length>0 && !ok ? 'Ingresa un valor mayor a cero' : '';
+    hint.className = 'hint err';
+    updateApplyState();
+  });
+
+  document.getElementById('inpTiempo').addEventListener('input', function(){
+    const hint = document.getElementById('hintTiempo');
+    const ok = Number(this.value) > 0;
+    this.classList.toggle('valid', ok);
+    this.classList.toggle('invalid', this.value.length>0 && !ok);
+    hint.textContent = this.value.length>0 && !ok ? 'Ingresa un número de días válido' : '';
+    hint.className = 'hint err';
+    updateApplyState();
+  });
+
+  document.getElementById('inpContacto').addEventListener('input', function(){
+    const ok = this.value.trim().length > 1;
+    this.classList.toggle('valid', ok);
+    this.classList.toggle('invalid', this.value.length>0 && !ok);
+    updateApplyState();
+  });
+
+  document.getElementById('inpCorreoContacto').addEventListener('input', function(){
+    const hint = document.getElementById('hintCorreoContacto');
+    if (this.value.length === 0){
+      hint.textContent=''; hint.className='hint'; this.classList.remove('valid','invalid');
+    } else if (validateEmail(this.value)){
+      hint.textContent='Correo válido'; hint.className='hint ok';
+      this.classList.add('valid'); this.classList.remove('invalid');
+    } else {
+      hint.textContent='Escribe un correo válido, ej: nombre@dominio.com'; hint.className='hint err';
+      this.classList.add('invalid'); this.classList.remove('valid');
+    }
+    updateApplyState();
+  });
+
+  document.getElementById('btnFile').addEventListener('click', function(){
+    state.fileAttached = !state.fileAttached;
+    this.textContent = state.fileAttached ? '📄 propuesta-tecnica.pdf adjuntada' : '📎 Adjuntar propuesta técnica (PDF)';
+    this.classList.toggle('attached', state.fileAttached);
+  });
+
+  document.getElementById('chkRequisitos').addEventListener('change', updateApplyState);
+  document.getElementById('btnBackDetail').addEventListener('click', () => goTo(2));
+
+  document.getElementById('btnEnviar').addEventListener('click', () => {
+    const radicado = 'RAD-' + Math.floor(100000 + Math.random()*900000);
+    document.getElementById('confRadicado').textContent = radicado;
+    goTo(4);
+  });
+
+  // ---------- SCREEN 5: CONFIRM ----------
+  function resetApplyForm(){
+    ['inpValor','inpTiempo','inpContacto','inpCorreoContacto'].forEach(id => {
+      const el = document.getElementById(id);
+      el.value = '';
+      el.classList.remove('valid','invalid');
+    });
+    ['hintValor','hintTiempo','hintCorreoContacto'].forEach(id => {
+      document.getElementById(id).textContent = '';
+    });
+    document.getElementById('chkRequisitos').checked = false;
+    document.getElementById('btnEnviar').disabled = true;
+    state.fileAttached = false;
+    document.getElementById('btnFile').textContent = '📎 Adjuntar propuesta técnica (PDF)';
+    document.getElementById('btnFile').classList.remove('attached');
+  }
+
+  document.getElementById('btnBackDash2').addEventListener('click', () => {
+    resetApplyForm();
+    goTo(1);
+  });
+
+  document.getElementById('btnHome').addEventListener('click', () => {
+    resetApplyForm();
+    goTo(1);
+  });
+
+  // ---------- CERRAR SESIÓN ----------
+  function resetSignupForm(){
+    document.getElementById('inpEmpresa').value = '';
+    document.getElementById('inpNit').value = '';
+    document.getElementById('inpCorreo').value = '';
+    document.getElementById('inpEmpresa').classList.remove('valid','invalid');
+    document.getElementById('inpNit').classList.remove('valid','invalid');
+    document.getElementById('inpCorreo').classList.remove('valid','invalid');
+    document.getElementById('hintNit').textContent = '';
+    document.getElementById('hintCorreo').textContent = '';
+    document.querySelectorAll('#sectorChips .chip').forEach(c => c.classList.remove('selected'));
+    document.getElementById('btnSignup').disabled = true;
+  }
+
+  document.getElementById('btnLogout').addEventListener('click', () => {
+    resetApplyForm();
+    resetSignupForm();
+    state.company = null;
+    state.sector = null;
+    state.activeCat = 'Todas';
+    state.searchTerm = '';
+    state.currentTender = null;
+    document.getElementById('topWho').textContent = 'portal de licitaciones';
+    document.getElementById('btnLogout').classList.remove('visible');
+    goTo(0);
+  });
+
+  // ---------- BOTÓN GLOBAL DE INICIO ----------
+  document.getElementById('btnHomeGlobal').addEventListener('click', () => {
+    if (state.screenIndex === 3) resetApplyForm();
+    if (state.company){
+      state.activeCat = 'Todas';
+      state.searchTerm = '';
+      document.getElementById('searchInput').value = '';
+      renderCatChips();
+      renderTenders();
+      goTo(1); // dashboard es el "home" una vez afiliado
+    } else {
+      goTo(0); // aún no se ha afiliado: el home es la pantalla de afiliación
+    }
+  });
+
+  // Init
+  renderStub();
+})();
+</script>
+</body>
+</html>
